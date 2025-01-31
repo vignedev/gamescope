@@ -147,6 +147,7 @@ const struct option *gamescope_options = (struct option[]){
 	{ "hdr-debug-force-support", no_argument, nullptr, 0 },
 	{ "hdr-debug-force-output", no_argument, nullptr, 0 },
 	{ "hdr-debug-heatmap", no_argument, nullptr, 0 },
+	{ "disable-explicit-sync", no_argument, nullptr, 0 },
 
 	{ "reshade-effect", required_argument, nullptr, 0 },
 	{ "reshade-technique-idx", required_argument, nullptr, 0 },
@@ -262,7 +263,8 @@ const char usage[] =
 	"  --disable-xres                 disable XRes for PID lookup\n"
 	"  --hdr-debug-force-support      forces support for HDR, etc even if the display doesn't support it. HDR clients will be outputted as SDR still in that case.\n"
 	"  --hdr-debug-force-output       forces support and output to HDR10 PQ even if the output does not support it (will look very wrong if it doesn't)\n"
-	"  --hdr-debug-heatmap            displays a heatmap-style debug view of HDR luminence across the scene in nits."
+	"  --hdr-debug-heatmap            displays a heatmap-style debug view of HDR luminence across the scene in nits.\n"
+	"  --disable-explicit-sync        force disables explicit sync, even if backend supports it\n"
 	"\n"
 	"Reshade shader options:\n"
 	"  --reshade-effect               sets the name of a reshade shader to use in either /usr/share/gamescope/reshade/Shaders or ~/.local/share/gamescope/reshade/Shaders\n"
@@ -298,6 +300,7 @@ uint32_t g_nOutputWidth = 0;
 uint32_t g_nOutputHeight = 0;
 int g_nOutputRefresh = 0;
 bool g_bOutputHDREnabled = false;
+bool g_bDisableExplicitSync = false;
 
 bool g_bFullscreen = false;
 bool g_bForceRelativeMouse = false;
@@ -835,6 +838,8 @@ int main(int argc, char **argv)
 								
 						}
 					}
+				} else if (strcmp(opt_name, "disable-explicit-sync") == 0) {
+					g_bDisableExplicitSync = true;
 				}
 				break;
 			case '?':
