@@ -743,6 +743,11 @@ namespace gamescope
 				{
 					uint32_t key = SDLScancodeToLinuxKey( event.key.keysym.scancode );
 
+					if ( key == KEY_LEFTMETA || key == KEY_RIGHTMETA )
+					{
+						break;
+					}
+
 					if ( event.type == SDL_KEYUP && ( event.key.keysym.mod & KMOD_LGUI ) )
 					{
 						bool handled = true;
