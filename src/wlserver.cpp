@@ -2016,7 +2016,10 @@ bool wlserver_init( void ) {
 	// Someday, he will be purged.
 	wlr_drm_create(wlserver.display, wlserver.wlr.renderer);
 
-	if ( GetBackend()->SupportsExplicitSync() )
+	if ( g_bDisableExplicitSync ) {
+		wl_log.infof( "Explicit sync is forcefully disabled" );
+	}
+	else if ( GetBackend()->SupportsExplicitSync() )
 	{
 		create_explicit_sync();
 		wl_log.infof( "Using explicit sync when available" );
