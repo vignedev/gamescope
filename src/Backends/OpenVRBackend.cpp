@@ -79,6 +79,8 @@ namespace vr
     const EVRButtonId k_EButton_QAM = (EVRButtonId)(51);
 }
 
+extern std::atomic<uint32_t> g_unCurrentVRSceneAppId;
+
 uint32_t get_appid_from_pid( pid_t pid );
 
 ///////////////////////////////////////////////
@@ -1013,6 +1015,7 @@ namespace gamescope
                     {
                         m_uCurrentScenePid = vrEvent.data.process.pid;
                         m_uCurrentSceneAppId = get_appid_from_pid(m_uCurrentScenePid);
+                        g_unCurrentVRSceneAppId = m_uCurrentSceneAppId;
 
                         openvr_log.debugf("SceneApplicationChanged -> pid: %u appid: %u", m_uCurrentScenePid, m_uCurrentSceneAppId);
 

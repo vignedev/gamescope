@@ -134,6 +134,8 @@ bool g_bWasPartialComposite = false;
 
 bool ShouldDrawCursor();
 
+std::atomic<uint32_t> g_unCurrentVRSceneAppId;
+
 ///
 // Color Mgmt
 //
@@ -1032,11 +1034,17 @@ window_is_steam( steamcompmgr_win_t *w )
 	return w && ( w->isSteamLegacyBigPicture || w->appID == 769 );
 }
 
+static bool
+window_is_vr_scene_app( steamcompmgr_win_t *w )
+{
+	return w && w->appID && w->appID == g_unCurrentVRSceneAppId.load( std::memory_order_relaxed );
+}
+
 bool g_bChangeDynamicRefreshBasedOnGameOpenRatherThanActive = false;
 
 bool steamcompmgr_window_should_limit_fps( steamcompmgr_win_t *w )
 {
-	return w && !window_is_steam( w ) && !w->isOverlay && !w->isExternalOverlay;
+	return w && !window_is_steam( w ) && !window_is_vr_scene_app( w ) && !w->isOverlay && !w->isExternalOverlay;
 }
 
 static bool
@@ -1380,6 +1388,10 @@ import_commit (
 		commit->feedback = *swapchain_feedback;
 	commit->present_id = present_id;
 	commit->desired_present_time = desired_present_time;
+	if (window_is_vr_scene_app( w )) {
+		commit->async = true;
+		commit->fifo = false;
+	}
 
 	if ( gamescope::OwningRc<CVulkanTexture> pTexture = s_BufferMemos.LookupVulkanTexture( buf ) )
 	{
