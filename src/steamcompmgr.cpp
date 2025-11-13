@@ -3857,7 +3857,13 @@ void xwayland_ctx_t::DetermineAndApplyFocus( const std::vector< steamcompmgr_win
 	if (w->GetGeometry().nX != 0 || w->GetGeometry().nY != 0)
 		XMoveWindow(ctx->dpy, ctx->focus.focusWindow->xwayland().id, 0, 0);
 
-	if ( window_is_fullscreen( ctx->focus.focusWindow ) || ctx->force_windows_fullscreen )
+	bool bForceFullscreen = ctx->force_windows_fullscreen;
+
+	// Force desktop windows to be fullscreen
+	if ( !win_has_game_id( ctx->focus.focusWindow ) )
+		bForceFullscreen = true;
+
+	if ( window_is_fullscreen( ctx->focus.focusWindow ) || bForceFullscreen )
 	{
 		bool bIsSteam = window_is_steam( ctx->focus.focusWindow );
 		int fs_width  = ctx->root_width;
@@ -4266,7 +4272,9 @@ determine_and_apply_focus( global_focus_t *pFocus )
 	// Sort out fading.
 	if (pFocus->focusWindow && previousLocalFocus.focusWindow != pFocus->focusWindow)
 	{
-		if ( g_FadeOutDuration != 0 && !g_bFirstFrame )
+		bool bDoFade = win_has_game_id( pFocus->focusWindow );
+
+		if ( g_FadeOutDuration != 0 && !g_bFirstFrame && bDoFade )
 		{
 			if ( g_HeldCommits[ HELD_COMMIT_FADE ] == nullptr )
 			{

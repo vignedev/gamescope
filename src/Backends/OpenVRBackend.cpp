@@ -859,6 +859,11 @@ namespace gamescope
                 return TouchClickModes::Trackpad;
             }
 
+            if ( VirtualConnectorKeyIsNonSteamWindow( pConnector->GetVirtualConnectorKey() ) )
+            {
+                return TouchClickModes::Passthrough;
+            }
+
             if ( VirtualConnectorInSteamPerAppState() )
             {
                 if ( !VirtualConnectorKeyIsSteam( pConnector->GetVirtualConnectorKey() ) )
