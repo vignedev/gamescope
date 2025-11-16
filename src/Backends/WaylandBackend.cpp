@@ -3066,6 +3066,11 @@ namespace gamescope
                 gamescope::CScreenshotManager::Get().TakeScreenshot( true );
                 break;
 
+            case KEY_H:
+                g_bForceRelativeMouse = !g_bForceRelativeMouse;
+                static_cast< CWaylandConnector * >( m_pBackend->GetCurrentConnector() )->SetRelativeMouseMode( g_bForceRelativeMouse );
+                break;
+                
             default:
                 break;
         }
