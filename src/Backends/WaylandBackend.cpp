@@ -2963,6 +2963,17 @@ namespace gamescope
                     }
                     return;
                 }
+                case KEY_H:
+                {
+                    if( !bPressed )
+                    {
+                        g_bForceRelativeMouse = !g_bForceRelativeMouse;
+
+                        CWaylandConnector* connector = (CWaylandConnector*)(this->m_pBackend->GetCurrentConnector());
+                        connector->SetRelativeMouseMode(g_bForceRelativeMouse);
+                    }
+                    return;
+                }
 
                 default:
                     break;
