@@ -879,6 +879,7 @@ global_focus_t *GetCurrentFocus()
 }
 
 uint32_t		currentOutputWidth, currentOutputHeight;
+int 			currentOutputRefresh;
 bool			currentHDROutput = false;
 bool			currentHDRForce = false;
 
@@ -2440,7 +2441,7 @@ static void ForwardVROverlayTargets()
 				if ( !lastCommit )
 					continue;
 
-                gamescope::IBackendFb* pFb = lastCommit->vulkanTex->GetBackendFb();
+                gamescope::IBackendFb* pFb = lastCommit->vulkanTex->GetBackendFb()->Unwrap();
 				if ( !pFb )
 					continue;
 
@@ -5074,16 +5075,25 @@ damage_win(xwayland_ctx_t *ctx, XDamageNotifyEvent *de)
 		bHasAppID = true;
 	}
 
+	bool bCareAboutWindow = true;
+
+	if ( win_is_useless( w ) || w->IsAnyOverlay() ||
+	    w->oulTargetVROverlay || w->isSysTrayIcon ||
+		w->xwayland().a.map_state != IsViewable )
+	{
+		bCareAboutWindow = false;
+	}
+
 	// First damage event we get, compute focus; we only want to focus damaged
 	// windows to have meaningful frames.
 	/// FIXME APPID FOCUS STRATERGY FOR 
-	if (bHasAppID && w->xwayland().damage_sequence == 0)
+	if (bHasAppID && bCareAboutWindow && w->xwayland().damage_sequence == 0)
 		MakeFocusDirty();
 
 	w->xwayland().damage_sequence = damageSequence++;
 
 	// If we just passed the focused window, we might be eliglible to take over
-	if ( focus && focus != w && bHasAppID &&
+	if ( focus && focus != w && bHasAppID && bCareAboutWindow &&
 		w->xwayland().damage_sequence > focus->xwayland().damage_sequence)
 		MakeFocusDirty();
 
@@ -7605,7 +7615,7 @@ void init_xwayland_ctx(uint32_t serverId, gamescope_xwayland_server_t *xwayland_
 	uint32_t unPid = getpid();
 	XChangeProperty(ctx->dpy, ctx->root, ctx->atoms.gamescopePid, XA_CARDINAL, 32, PropModeReplace, (unsigned char *)&unPid, 1 );
 
-	uint32_t unVROverlayForwardingSupported = GetBackend()->SupportsVROverlayForwarding() ? 1 : 0;
+	uint32_t unVROverlayForwardingSupported = GetBackend()->SupportsVROverlayForwarding() ? 2 : 0;
 	XChangeProperty(ctx->dpy, ctx->root, ctx->atoms.gamescopeVROverlayForwarding, XA_CARDINAL, 32, PropModeReplace, (unsigned char *)&unVROverlayForwardingSupported, 1 );
 
 	XGrabServer(ctx->dpy);
@@ -8339,10 +8349,11 @@ steamcompmgr_main(int argc, char **argv)
 		// of whatever jumble of races the below might cause over a couple of frames
 		if ( currentOutputWidth != g_nOutputWidth ||
 			 currentOutputHeight != g_nOutputHeight ||
+			 currentOutputRefresh != g_nOutputRefresh ||
 			 currentHDROutput != g_bOutputHDREnabled ||
 			 currentHDRForce != g_bForceHDRSupportDebug )
 		{
-			if ( steamMode && g_nXWaylandCount > 1 )
+			if ( g_nXWaylandCount > 1 )
 			{
 				g_nNestedHeight = ( g_nNestedWidth * g_nOutputHeight ) / g_nOutputWidth;
 				wlserver_lock();
@@ -8388,6 +8399,7 @@ steamcompmgr_main(int argc, char **argv)
 
 			currentOutputWidth = g_nOutputWidth;
 			currentOutputHeight = g_nOutputHeight;
+			currentOutputRefresh = g_nOutputRefresh;
 			currentHDROutput = g_bOutputHDREnabled;
 			currentHDRForce = g_bForceHDRSupportDebug;
 

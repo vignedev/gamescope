@@ -1736,8 +1736,16 @@ gamescope_xwayland_server_t::gamescope_xwayland_server_t(wl_display *display, in
 		refresh = g_nOutputRefresh;
 	}
 
+	int width = g_nNestedWidth;
+	int height = g_nNestedHeight;
+	if ( g_nXWaylandCount > 1 && nIndex == 0 )
+	{
+		width = g_nOutputWidth;
+		height = g_nOutputHeight;
+	}
+
 	wlr_output_state_set_enabled(output_state, true);
-	wlr_output_state_set_custom_mode(output_state, g_nNestedWidth, g_nNestedHeight, refresh);
+	wlr_output_state_set_custom_mode(output_state, width, height, refresh);
 	if (!wlr_output_commit_state(output, output_state))
 	{
 		wl_log.errorf("Failed to commit headless output");
