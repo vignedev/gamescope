@@ -597,6 +597,11 @@ static void handle_wl_surface_destroy( struct wl_listener *l, void *data )
 	}
 	surf->pending_presentation_feedbacks.clear();
 
+	if ( surf->pSyncobjSurface )
+	{
+		wl_resource_destroy( surf->pSyncobjSurface->GetResource() );
+	}
+
 	surf->wlr->data = nullptr;
 
 	for ( wl_resource *pSwapchain : surf->gamescope_swapchains )
