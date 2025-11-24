@@ -234,21 +234,7 @@ namespace gamescope::Process
 
     bool CloseFd( int nFd )
     {
-        for ( ;; )
-        {
-            if ( close( nFd ) == 0 )
-            {
-                return true;
-            }
-            else
-            {
-                if ( errno == EINTR )
-                    continue;
-
-                s_ProcessLog.errorf_errno( "CloseFd failed to close FD %d", nFd );
-                return false;
-            }
-        }
+        return close( nFd ) == 0;
     }
 
     void CloseAllFds( std::span<int> nExcludedFds )
