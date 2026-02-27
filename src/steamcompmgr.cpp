@@ -2445,7 +2445,7 @@ static void ForwardVROverlayTargets()
 	{
 		for ( steamcompmgr_win_t *w = server->ctx->list; w; w = w->xwayland().next )
 		{
-			if ( w->oulTargetVROverlay )
+			if ( w->oulTargetVROverlay && w->bNeedsForwarding )
 			{
 				gamescope::Rc<commit_t> lastCommit;
 				get_window_last_done_commit( w, lastCommit );
@@ -2458,6 +2458,8 @@ static void ForwardVROverlayTargets()
 
 				const uint64_t ulOverlayHandle = *w->oulTargetVROverlay;
 				GetBackend()->ForwardFramebuffer( w->pForwarderPlane, pFb, &ulOverlayHandle );
+
+				w->bNeedsForwarding = false;
 			}
 		}
 	}
@@ -4648,6 +4650,11 @@ map_win(xwayland_ctx_t* ctx, Window id, unsigned long sequence)
 		w->appID = 0;
 
 	w->oulTargetVROverlay = get_u64_prop(ctx, w->xwayland().id, ctx->atoms.steamGamescopeVROverlayTarget);
+	if ( w->oulTargetVROverlay )
+	{
+		g_bUpdateForwardedVROverlays = true;
+		w->bNeedsForwarding = true;
+	}
 	w->pForwarderPlane = nullptr;
 
 	get_size_hints(ctx, w);
@@ -5793,6 +5800,7 @@ handle_property_notify(xwayland_ctx_t *ctx, XPropertyEvent *ev)
 			MakeFocusDirty();
 			hasRepaint = true;
 			g_bUpdateForwardedVROverlays = true;
+			w->bNeedsForwarding = true;
 		}
 	}
 	if (ev->atom == ctx->atoms.gamescopeCtrlAppIDAtom )
@@ -6672,6 +6680,7 @@ bool handle_done_commit( steamcompmgr_win_t *w, xwayland_ctx_t *ctx, uint64_t co
 			if ( w->oulTargetVROverlay )
 			{
 				g_bUpdateForwardedVROverlays = true;
+				w->bNeedsForwarding = true;
 			}
 
 			for ( auto &iter : g_VirtualConnectorFocuses )
@@ -8945,7 +8954,7 @@ steamcompmgr_main(int argc, char **argv)
 			}
 		}
 
-		if ( g_bUpdateForwardedVROverlays )
+		if ( vblank && g_bUpdateForwardedVROverlays )
 		{
 			ForwardVROverlayTargets();
 
