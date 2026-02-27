@@ -914,6 +914,8 @@ uint32_t		lastPublishedInputCounter;
 std::atomic<bool> hasRepaint = false;
 bool			hasRepaintNonBasePlane = false;
 
+bool			g_bUpdateForwardedVROverlays = false;
+
 static gamescope::ConCommand cc_debug_force_repaint( "debug_force_repaint", "Force a repaint",
 []( std::span<std::string_view> args )
 {
@@ -2809,8 +2811,6 @@ paint_all( global_focus_t *pFocus, bool async )
 			frameInfo.lut3D[i] = g_ColorMgmtLuts[i].vk_lut3d;
 		}
 	}
-
-	ForwardVROverlayTargets();
 
 	if ( pConnector && pConnector->Present( &frameInfo, async ) != 0 )
 	{
@@ -5792,6 +5792,7 @@ handle_property_notify(xwayland_ctx_t *ctx, XPropertyEvent *ev)
 			w->pForwarderPlane = nullptr;
 			MakeFocusDirty();
 			hasRepaint = true;
+			g_bUpdateForwardedVROverlays = true;
 		}
 	}
 	if (ev->atom == ctx->atoms.gamescopeCtrlAppIDAtom )
@@ -6670,7 +6671,7 @@ bool handle_done_commit( steamcompmgr_win_t *w, xwayland_ctx_t *ctx, uint64_t co
 			// If this is a forwarded vr plane, repaint
 			if ( w->oulTargetVROverlay )
 			{
-				hasRepaint = true;
+				g_bUpdateForwardedVROverlays = true;
 			}
 
 			for ( auto &iter : g_VirtualConnectorFocuses )
@@ -8942,6 +8943,13 @@ steamcompmgr_main(int argc, char **argv)
 
 				bPainted = true;
 			}
+		}
+
+		if ( g_bUpdateForwardedVROverlays )
+		{
+			ForwardVROverlayTargets();
+
+			g_bUpdateForwardedVROverlays = false;
 		}
 
 		if ( bPainted )
