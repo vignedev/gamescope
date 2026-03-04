@@ -381,6 +381,15 @@ namespace gamescope
             return m_pChild->ShouldFitWindows();
         }
 
+        void OnEndFrame() override
+        {
+            {
+                std::shared_lock lock{ m_mutInit };
+                if ( m_bInittedChild )
+                    m_pChild->OnEndFrame();
+            }
+        }
+
 	protected:
 
 		virtual void OnBackendBlobDestroyed( BackendBlob *pBlob ) override

@@ -427,9 +427,6 @@ namespace gamescope
 
                 GetVBlankTimer().MarkVBlank( ulNow, true );
 
-                // Nudge so that steamcompmgr releases commits.
-                nudge_steamcompmgr();
-
                 // Flush out any pending commits -> visible
                 // and any visible commits -> release.
                 {
@@ -454,6 +451,9 @@ namespace gamescope
 
                     m_pForwarderPlanesInFlight.clear();
                 }
+
+                // Nudge so that steamcompmgr releases commits.
+                nudge_steamcompmgr();
 
                 ProcessVRInput();
             }
@@ -987,6 +987,18 @@ namespace gamescope
         bool SupportsColorManagement() const
         {
             return false;
+        }
+
+        void OnEndFrame() override
+        {
+            GetVBlankTimer().UpdateWasCompositing( true );
+            GetVBlankTimer().UpdateLastDrawTime( get_time_in_nanos() - g_SteamCompMgrVBlankTime.ulWakeupTime );
+
+            int32_t nNewRefreshRate = (int32_t) ConvertHztomHz( roundf( vr::VRSystem()->GetFloatTrackedDeviceProperty( vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_DisplayFrequency_Float ) ) );
+            if ( g_nOutputRefresh != nNewRefreshRate )
+                g_nOutputRefresh = nNewRefreshRate;
+
+            PollState();
         }
 
         const char *GetOverlayKey() const { return m_szOverlayKey.c_str(); }
@@ -1649,16 +1661,6 @@ namespace gamescope
             for ( int i = 1; i < 8; i++ )
                 m_Planes[i].Present( nullptr );
         }
-
-
-        GetVBlankTimer().UpdateWasCompositing( true );
-        GetVBlankTimer().UpdateLastDrawTime( get_time_in_nanos() - g_SteamCompMgrVBlankTime.ulWakeupTime );
-
-        int32_t nNewRefreshRate = (int32_t) ConvertHztomHz( roundf( vr::VRSystem()->GetFloatTrackedDeviceProperty( vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_DisplayFrequency_Float ) ) );
-        if ( g_nOutputRefresh != nNewRefreshRate )
-            g_nOutputRefresh = nNewRefreshRate;
-
-        m_pBackend->PollState();
 
         return 0;
     }

@@ -131,6 +131,8 @@ LogScope g_WaitableLog("waitable");
 
 gamescope::ConVar<bool> cv_overlay_unmultiplied_alpha{ "overlay_unmultiplied_alpha", false };
 
+gamescope::ConVar<bool> cv_vr_show_forwarded_overlays{ "vr_show_forwarded_overlays", false };
+
 std::string *g_pVROverlayKey = nullptr;
 bool g_bWasPartialComposite = false;
 
@@ -2463,6 +2465,8 @@ static void ForwardVROverlayTargets()
 			}
 		}
 	}
+
+	gpuvis_trace_printf( "Forward VR Overlays" );
 }
 
 gamescope::ConVar<bool> cv_paint_primary_plane{ "paint_primary_plane", true };
@@ -3669,7 +3673,7 @@ found:;
 		}
 
 		// Skip overlay targets
-		if ( w->oulTargetVROverlay )
+		if ( w->oulTargetVROverlay && !cv_vr_show_forwarded_overlays )
 		{
 			continue;
 		}
@@ -4561,7 +4565,7 @@ handle_desktop_window(steamcompmgr_win_t *w)
 	if ( w->type != steamcompmgr_win_type_t::XWAYLAND )
 		return;
 
-	if ( w->xwayland().a.override_redirect || w->oulTargetVROverlay )
+	if ( w->xwayland().a.override_redirect || ( w->oulTargetVROverlay && !cv_vr_show_forwarded_overlays ) )
 		return;
 
 	if ( win_maybe_a_dropdown( w ) || win_is_useless( w ) )
@@ -5224,7 +5228,7 @@ damage_win(xwayland_ctx_t *ctx, XDamageNotifyEvent *de)
 	bool bCareAboutWindow = true;
 
 	if ( win_is_useless( w ) || w->IsAnyOverlay() ||
-	    w->oulTargetVROverlay || w->isSysTrayIcon ||
+	    ( w->oulTargetVROverlay && !cv_vr_show_forwarded_overlays ) || w->isSysTrayIcon ||
 		w->xwayland().a.map_state != IsViewable )
 	{
 		bCareAboutWindow = false;
@@ -8959,10 +8963,14 @@ steamcompmgr_main(int argc, char **argv)
 			ForwardVROverlayTargets();
 
 			g_bUpdateForwardedVROverlays = false;
+
+			bPainted = true;
 		}
 
 		if ( bPainted )
 		{
+			GetBackend()->OnEndFrame();
+
 			hasRepaint = false;
 			hasRepaintNonBasePlane = false;
 			nIgnoredOverlayRepaints = 0;

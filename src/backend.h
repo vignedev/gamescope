@@ -394,6 +394,8 @@ namespace gamescope
 
         virtual bool ShouldFitWindows() = 0;
 
+        virtual void OnEndFrame() = 0;
+
         static IBackend *Get();
         template <typename T>
         static bool Set();
@@ -430,6 +432,8 @@ namespace gamescope
         virtual bool NewlyInitted() override { return false; }
 
         virtual bool ShouldFitWindows() override { return true; }
+
+        virtual void OnEndFrame() override {}
     };
 
     // This is a blob of data that may be associated with
