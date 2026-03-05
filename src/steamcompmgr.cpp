@@ -8458,7 +8458,8 @@ steamcompmgr_main(int argc, char **argv)
 				{
 					// Exclude windows that are useless (1x1), or override redirect windows
 					if ( win_is_useless( pWindow ) ||
-						( pWindow->type == steamcompmgr_win_type_t::XWAYLAND && pWindow->xwayland().a.override_redirect ) )
+						( pWindow->type == steamcompmgr_win_type_t::XWAYLAND && pWindow->xwayland().a.override_redirect &&
+						 !pWindow->isSteamLegacyBigPicture ) ) // bootstrapper is override redirect :(
 					{
 						continue;
 					}
