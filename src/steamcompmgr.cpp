@@ -2445,7 +2445,7 @@ static void ForwardVROverlayTargets()
 				if ( !lastCommit )
 					continue;
 
-                gamescope::IBackendFb* pFb = lastCommit->vulkanTex->GetBackendFb()->Unwrap();
+                gamescope::IBackendFb* pFb = lastCommit->vulkanTex->GetBackendFb();
 				if ( !pFb )
 					continue;
 

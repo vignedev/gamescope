@@ -277,7 +277,7 @@ namespace gamescope
         virtual void SetBuffer( wlr_buffer *pClientBuffer ) = 0;
         virtual void SetReleasePoint( std::shared_ptr<CReleaseTimelinePoint> pReleasePoint ) = 0;
 
-        virtual IBackendFb *Unwrap() = 0;
+        virtual IBackendFb *EnsureImported() = 0;
     };
 
     class IBackendPlane
@@ -298,7 +298,7 @@ namespace gamescope
         void SetBuffer( wlr_buffer *pClientBuffer ) override;
         void SetReleasePoint( std::shared_ptr<CReleaseTimelinePoint> pReleasePoint ) override;
 
-        virtual IBackendFb *Unwrap() override { return this; };
+        virtual IBackendFb *EnsureImported() override { return this; };
 
     private:
         wlr_buffer *m_pClientBuffer = nullptr;
