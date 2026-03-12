@@ -934,6 +934,7 @@ std::mutex g_SteamCompMgrXWaylandServerMutex;
 gamescope::VBlankTime g_SteamCompMgrVBlankTime = {};
 
 uint64_t g_uCurrentBasePlaneCommitID = 0;
+uint32_t g_uCurrentBasePlaneAppID = 0;
 bool g_bCurrentBasePlaneIsFifo = false;
 
 static int g_nSteamCompMgrTargetFPS = 0;
@@ -1390,6 +1391,7 @@ import_commit (
 	commit->async = async;
 	commit->fifo = fifo;
 	commit->is_steam = window_is_steam( w );
+	commit->appID = w->appID;
 	commit->presentation_feedbacks = std::move(presentation_feedbacks);
 	if (swapchain_feedback)
 		commit->feedback = *swapchain_feedback;
@@ -2264,6 +2266,7 @@ paint_window(steamcompmgr_win_t *w, steamcompmgr_win_t *scaleW, struct FrameInfo
 			g_CachedPlanes[ HELD_COMMIT_FADE ] = basePlane;
 
 		g_uCurrentBasePlaneCommitID = lastCommit->commitID;
+		g_uCurrentBasePlaneAppID = lastCommit->appID;
 		g_bCurrentBasePlaneIsFifo = lastCommit->IsPerfOverlayFIFO();
 	}
 }
@@ -6879,6 +6882,8 @@ void handle_done_commits_xdg( bool vblank, uint64_t vblank_idx )
 	g_steamcompmgr_xdg_done_commits.listCommitsDone.swap( commits_before_their_time );
 }
 
+gamescope::ConVar<bool> cv_mangoapp_use_output_timing{ "mangoapp_use_output_timing", true };
+
 void handle_presented_for_window( steamcompmgr_win_t* w )
 {
 	// wlserver_lock is held.
@@ -6892,15 +6897,18 @@ void handle_presented_for_window( steamcompmgr_win_t* w )
 	commit_t *lastCommit = get_window_last_done_commit_peek(w);
 	if (lastCommit)
 	{
-		// We might present the same commit multiple times. In these cases
-		// there will be no frametime delta as the last frame was just re-used.
-		uint64_t frametime_ns = lastCommit->present_time - w->last_commit_present_time;
-		if ( frametime_ns > 0 )
+		if ( !cv_mangoapp_use_output_timing )
 		{
-			if ( w->appID > 0 )
-				wlserver_app_presented( w->appID, frametime_ns );
+			// We might present the same commit multiple times. In these cases
+			// there will be no frametime delta as the last frame was just re-used.
+			uint64_t frametime_ns = lastCommit->present_time - w->last_commit_present_time;
+			if ( frametime_ns > 0 )
+			{
+				if ( w->appID > 0 )
+					wlserver_app_presented( w->appID, frametime_ns );
 
-			w->last_commit_present_time = lastCommit->present_time;
+				w->last_commit_present_time = lastCommit->present_time;
+			}
 		}
 
 		if (!lastCommit->presentation_feedbacks.empty() || lastCommit->present_id)
