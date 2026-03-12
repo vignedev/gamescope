@@ -393,6 +393,12 @@ namespace gamescope
 		const displaycolorimetry_t& GetDisplayColorimetry() const { return m_Mutable.DisplayColorimetry; }
 
 		std::span<const uint8_t> GetRawEDID() const override { return std::span<const uint8_t>{ m_Mutable.EdidData.begin(), m_Mutable.EdidData.end() }; }
+		bool HandleEdidChange()
+		{
+			bool bChanged = m_Mutable.bEdidChanged;
+			m_Mutable.bEdidChanged = false;
+			return bChanged;
+		}
 
 		bool SupportsHDR10() const
 		{
@@ -510,9 +516,11 @@ namespace gamescope
 			std::vector<uint32_t> ValidDynamicRefreshRates{};
 			std::vector<uint8_t> EdidData; // Raw, unmodified.
 			std::vector<BackendMode> BackendModes;
-
+			
 			displaycolorimetry_t DisplayColorimetry = displaycolorimetry_709;
 			BackendConnectorHDRInfo HDR;
+
+			bool bEdidChanged = false;
 		} m_Mutable;
 
 		GamescopePanelOrientation m_ChosenOrientation = GAMESCOPE_PANEL_ORIENTATION_AUTO;
@@ -1045,6 +1053,16 @@ static bool setup_best_connector(struct drm_t *drm, bool force, bool initial)
 		{
 			best = pConnector;
 			nBestPriority = nPriority;
+		}
+	}
+
+	if ( best && best == drm->pConnector )
+	{
+		// If the device's EDID changed from user us, force a mode-change
+		// as we might
+		if ( best->HandleEdidChange() )
+		{
+			force = true;
 		}
 	}
 
@@ -2122,6 +2140,9 @@ namespace gamescope
 			return a.vrefresh > b.vrefresh;
 		} );
 
+		std::vector<uint8_t> oldEdid = std::move( m_Mutable.EdidData );
+		m_Mutable.EdidData.clear();
+
 		// Clear this information out.
 		m_Mutable = MutableConnectorState{};
 
@@ -2160,6 +2181,11 @@ namespace gamescope
 		}
 
 		ParseEDID();
+
+		if ( m_Mutable.EdidData != oldEdid )
+		{
+			m_Mutable.bEdidChanged = true;
+		}
 	}
 
 	int CDRMConnector::Present( const FrameInfo_t *pFrameInfo, bool bAsync )
