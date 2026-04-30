@@ -1700,12 +1700,12 @@ namespace gamescope
 
             if ( bShouldHideCursor )
             {
-                if ( !m_bCurrentlyOverridingPosition )
-                    continue;
+                if ( m_bCurrentlyOverridingPosition )
+                {
+                    vr::VROverlay()->ClearOverlayCursorPositionOverride( GetPrimaryPlane()->GetOverlay() );
 
-                vr::VROverlay()->ClearOverlayCursorPositionOverride( GetPrimaryPlane()->GetOverlay() );
-
-                m_bCurrentlyOverridingPosition = false;
+                    m_bCurrentlyOverridingPosition = false;
+                }
             }
         }
         else
