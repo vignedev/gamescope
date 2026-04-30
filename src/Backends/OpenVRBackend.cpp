@@ -781,7 +781,7 @@ namespace gamescope
 		{
 			return m_pKeyboardFocusConnector;
 		}
-        virtual IBackendConnector *GetCurrentMouseConnector()
+        virtual IBackendConnector *GetCurrentMouseConnector() override
         {
             return m_pMouseFocusConnector;
         }
