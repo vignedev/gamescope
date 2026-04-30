@@ -368,6 +368,7 @@ namespace gamescope
         virtual void SetTitle( std::shared_ptr<std::string> szTitle ) override;
         virtual void SetIcon( std::shared_ptr<std::vector<uint32_t>> uIconPixels ) override;
         virtual void SetSelection( std::shared_ptr<std::string> szContents, GamescopeSelection eSelection ) override;
+        virtual bool ShouldPaintCursor() override { return true; }
 
         bool UpdateEdid();
 
@@ -1449,35 +1450,6 @@ namespace gamescope
                 wlserver_touchmotion(flTouchMoveX, flTouchMoveY, 0, ++m_uFakeTimestamp, bAlwaysMoveCursor);
                 wlserver_unlock();
             }
-
-            // Process mouse input state.
-            for (COpenVRConnector *pConnector : m_pActiveConnectors)
-            {
-                bool bUsingPhysicalMouse = GetCurrentConnector() == pConnector && !pConnector->m_bUsingVRMouse;
-
-                bool bShowCursor = !pConnector->IsRelativeMouse();
-
-                if (bUsingPhysicalMouse && bShowCursor)
-                {
-                    vr::HmdVector2_t vMousePos =
-                        {
-                            static_cast<float>(wlserver.mouse_surface_cursorx),
-                            static_cast<float>(static_cast<double>(g_nOutputHeight) - wlserver.mouse_surface_cursory),
-                        };
-
-                    vr::VROverlay()->SetOverlayCursorPositionOverride(pConnector->GetPrimaryPlane()->GetOverlay(), &vMousePos);
-                    pConnector->m_bCurrentlyOverridingPosition = true;
-                }
-                else
-                {
-                    if (!pConnector->m_bCurrentlyOverridingPosition)
-                        continue;
-
-                    vr::VROverlay()->ClearOverlayCursorPositionOverride(pConnector->GetPrimaryPlane()->GetOverlay());
-
-                    pConnector->m_bCurrentlyOverridingPosition = false;
-                }
-            }
         }
 
         std::string m_szOverlayKey;
@@ -1696,8 +1668,45 @@ namespace gamescope
                     } );
             }
 
+            bool bShouldHideCursor = true;
+
             for ( int i = 0; i < 8 && uCurrentPlane < 8; i++ )
-                m_Planes[uCurrentPlane++].Present( i < pFrameInfo->layerCount ? &pFrameInfo->layers[i] : nullptr );
+            {
+                const FrameInfo_t::Layer_t *pLayer = i < pFrameInfo->layerCount ? &pFrameInfo->layers[i] : nullptr;
+                if ( pLayer && pLayer->zpos == g_zposCursor )
+                {
+                    bool bUsingPhysicalMouse = m_pBackend->GetCurrentMouseConnector() == this && !m_bUsingVRMouse;
+
+                    bool bShowCursor = !IsRelativeMouse();
+
+                    if (bUsingPhysicalMouse && bShowCursor)
+                    {
+                        vr::HmdVector2_t vMousePos =
+                        {
+                            static_cast<float>( -pLayer->offset.x ),
+                            static_cast<float>( static_cast<float>( g_nOutputHeight ) + pLayer->offset.y ),
+                        };
+
+                        vr::VROverlay()->SetOverlayCursorPositionOverride( GetPrimaryPlane()->GetOverlay(), &vMousePos );
+                        m_bCurrentlyOverridingPosition = true;
+
+                        bShouldHideCursor = false;
+                    }
+
+                    pLayer = nullptr; // Handled here.
+                }
+                m_Planes[uCurrentPlane++].Present( pLayer );
+            }
+
+            if ( bShouldHideCursor )
+            {
+                if ( !m_bCurrentlyOverridingPosition )
+                    continue;
+
+                vr::VROverlay()->ClearOverlayCursorPositionOverride( GetPrimaryPlane()->GetOverlay() );
+
+                m_bCurrentlyOverridingPosition = false;
+            }
         }
         else
         {

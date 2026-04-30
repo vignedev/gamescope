@@ -2434,7 +2434,10 @@ bool ShouldDrawCursor()
 	if ( !pFocus )
 		return false;
 
-	return !pFocus->GetNestedHints();
+	if ( !pFocus->GetNestedHints() )
+		return true;
+
+	return pFocus->GetNestedHints()->ShouldPaintCursor();
 }
 
 static void ForwardVROverlayTargets()
