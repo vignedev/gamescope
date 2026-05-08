@@ -343,6 +343,8 @@ static void wlserver_handle_key(struct wl_listener *listener, void *data)
 	bump_input_counter();
 }
 
+gamescope::ConVar<bool> cv_disable_mouse ( "disable_mouse", false, "Disables mouse events from being passed further" );
+
 static void wlserver_perform_rel_pointer_motion(double unaccel_dx, double unaccel_dy)
 {
 	assert( wlserver_is_lock_held() );
@@ -2675,6 +2677,9 @@ static bool wlserver_apply_constraint( double *dx, double *dy )
 
 void wlserver_mousemotion( double dx, double dy, uint32_t time )
 {
+	if (cv_disable_mouse)
+		return;
+
 	assert( wlserver_is_lock_held() );
 
 	dx *= g_mouseSensitivity;
@@ -2704,6 +2709,9 @@ void wlserver_mousemotion( double dx, double dy, uint32_t time )
 
 void wlserver_mousewarp( double x, double y, uint32_t time, bool bSynthetic )
 {
+	if (cv_disable_mouse)
+		return;
+
 	assert( wlserver_is_lock_held() );
 
 	wlserver.mouse_surface_cursorx = x;
@@ -2730,6 +2738,9 @@ void wlserver_fake_mouse_pos( double x, double y )
 
 void wlserver_mousebutton( int button, bool press, uint32_t time )
 {
+	if (cv_disable_mouse)
+		return;
+
 	assert( wlserver_is_lock_held() );
 
 	wlserver.bCursorHidden = !wlserver.bCursorHasImage;
@@ -2742,6 +2753,9 @@ void wlserver_mousebutton( int button, bool press, uint32_t time )
 
 void wlserver_mousewheel( double flX, double flY, uint32_t time )
 {
+	if (cv_disable_mouse)
+		return;
+
 	assert( wlserver_is_lock_held() );
 
 	wlr_seat_pointer_notify_axis( wlserver.wlr.seat, time, WL_POINTER_AXIS_HORIZONTAL_SCROLL, flX, flX * WLR_POINTER_AXIS_DISCRETE_STEP, WL_POINTER_AXIS_SOURCE_WHEEL, WL_POINTER_AXIS_RELATIVE_DIRECTION_IDENTICAL );
@@ -2840,6 +2854,9 @@ static void apply_touchscreen_orientation(GamescopePanelOrientation orientation,
 
 void wlserver_touchmotion( double x, double y, int touch_id, uint32_t time, bool bAlwaysWarpCursor, gamescope::IBackendConnector* connector )
 {
+	if (cv_disable_mouse)
+		return;
+
 	assert( wlserver_is_lock_held() );
 
 	if ( wlserver.mouse_focus_surface != NULL )
@@ -2898,6 +2915,9 @@ void wlserver_touchmotion( double x, double y, int touch_id, uint32_t time, bool
 
 void wlserver_touchdown( double x, double y, int touch_id, uint32_t time, gamescope::IBackendConnector* connector )
 {
+	if (cv_disable_mouse)
+		return;
+
 	assert( wlserver_is_lock_held() );
 
 	if ( wlserver.mouse_focus_surface != NULL )
@@ -2956,6 +2976,9 @@ void wlserver_touchdown( double x, double y, int touch_id, uint32_t time, gamesc
 
 void wlserver_touchup( int touch_id, uint32_t time )
 {
+	if (cv_disable_mouse)
+		return;
+
 	assert( wlserver_is_lock_held() );
 
 	if ( wlserver.mouse_focus_surface != NULL )
