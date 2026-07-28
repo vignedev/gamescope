@@ -309,11 +309,17 @@ namespace gamescope
 			char szTimeBuffer[ 1024 ];
 			time_t currentTime = time(0);
 			struct tm *pLocalTime = localtime( &currentTime );
-			strftime( szTimeBuffer, sizeof( szTimeBuffer ), bAVIF ? "/tmp/gamescope_%Y-%m-%d_%H-%M-%S.avif" : "/tmp/gamescope_%Y-%m-%d_%H-%M-%S.png", pLocalTime );
+
+			const char* outputFolderEnv = std::getenv("GAMESCOPE_SCREENSHOT_FOLDER");
+			std::string outputFolder = (outputFolderEnv && *outputFolderEnv) ? outputFolderEnv : "/tmp";
+			if(outputFolder.back() != '/')
+				outputFolder += "/";
+
+			strftime(szTimeBuffer, sizeof(szTimeBuffer), bAVIF ? "gamescope_%Y-%m-%d_%H-%M-%S.avif" : "gamescope_%Y-%m-%d_%H-%M-%S.png", pLocalTime);
 
 			TakeScreenshot( GamescopeScreenshotInfo
 			{
-				.szScreenshotPath = szTimeBuffer,
+				.szScreenshotPath = outputFolder + szTimeBuffer,
 			} );
 		}
 
