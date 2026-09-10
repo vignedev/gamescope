@@ -1262,6 +1262,7 @@ namespace gamescope
         if ( g_bGrabbed )
             szTitle += " (grabbed)";
         libdecor_frame_set_title( m_Planes[0].GetFrame(), szTitle.c_str() );
+        libdecor_frame_set_app_id( m_Planes[0].GetFrame(), (g_nClassName == nullptr) ? "gamescope" : g_nClassName );
     }
     void CWaylandConnector::SetIcon( std::shared_ptr<std::vector<uint32_t>> uIconPixels )
     {
