@@ -77,6 +77,7 @@
 #include "gpuvis_trace_utils.h"
 
 #include <algorithm>
+#include <cfloat>
 #include <list>
 #include <set>
 
