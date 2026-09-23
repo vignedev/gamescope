@@ -1033,6 +1033,7 @@ struct global_focus_t : public focus_t
 	bool bBasePlaneIsFifo = false;
 	pid_t nFocusWindowPid = 0;
 	std::shared_ptr<std::string> pFocusWindowEngine;
+	uint64_t ulNestedCursorSerial = 0;
 
 	gamescope::VirtualConnectorKey_t ulVirtualFocusKey = 0;
 	std::shared_ptr<gamescope::IBackendConnector> pVirtualConnector;
@@ -2197,6 +2198,20 @@ bool MouseCursor::getTexture()
 		m_dirty = true;
 	}
 
+	// Not GetCurrentMouseFocus(), its keyboard focus fallback may show another Xwayland.
+	gamescope::IBackendConnector *pMouseConnector = GetBackend()->GetCurrentMouseConnector();
+	const bool bNested = pMouseConnector && pMouseConnector->GetNestedHints();
+	global_focus_t *pNestedFocus = nullptr;
+	if ( bNested )
+	{
+		auto iter = g_VirtualConnectorFocuses.find( pMouseConnector->GetVirtualConnectorKey() );
+		if ( iter != g_VirtualConnectorFocuses.end() && iter->second.cursor == this )
+			pNestedFocus = &iter->second;
+	}
+
+	if ( pNestedFocus && pNestedFocus->ulNestedCursorSerial != m_ulImageSerial )
+		m_dirty = true;
+
 	if (!m_dirty) {
 		return !m_imageEmpty;
 	}
@@ -2207,7 +2222,9 @@ bool MouseCursor::getTexture()
 		return false;
 	}
 
-	bool bNested = GetBackend()->GetCurrentMouseConnector() && GetBackend()->GetCurrentMouseConnector()->GetNestedHints();
+	// Unique across Xwaylands, so a focus can tell whose read it last sent.
+	static uint64_t s_ulCursorImageSerial = 0;
+	m_ulImageSerial = ++s_ulCursorImageSerial;
 
 	m_hotspotX = image->xhot;
 	m_hotspotY = image->yhot;
@@ -2300,9 +2317,12 @@ bool MouseCursor::getTexture()
 	m_dirty = false;
 	updateCursorFeedback();
 
+	if ( pNestedFocus )
+		pNestedFocus->ulNestedCursorSerial = m_ulImageSerial;
+
 	if (m_imageEmpty) {
-		if ( bNested )
-			GetBackend()->GetCurrentMouseConnector()->GetNestedHints()->SetCursorImage( nullptr );
+		if ( pNestedFocus )
+			pMouseConnector->GetNestedHints()->SetCursorImage( nullptr );
 		return false;
 	}
 
@@ -2316,7 +2336,7 @@ bool MouseCursor::getTexture()
 
 	m_texture = vulkan_create_texture_from_bits(surfaceWidth, surfaceHeight, nContentWidth, nContentHeight, DRM_FORMAT_ARGB8888, texCreateFlags, cursorBuffer.data());
 
-	if ( bNested )
+	if ( pNestedFocus )
 	{
 		auto info = std::make_shared<gamescope::INestedHints::CursorInfo>(
 			gamescope::INestedHints::CursorInfo
@@ -2327,7 +2347,7 @@ bool MouseCursor::getTexture()
 				.uXHotspot = image->xhot,
 				.uYHotspot = image->yhot,
 			});
-		GetBackend()->GetCurrentMouseConnector()->GetNestedHints()->SetCursorImage( std::move( info ) );
+		pMouseConnector->GetNestedHints()->SetCursorImage( std::move( info ) );
 	}
 
 	assert(m_texture);
