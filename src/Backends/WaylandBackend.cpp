@@ -3031,6 +3031,16 @@ namespace gamescope
                     return;
                 }
 
+                case KEY_J:
+                {
+                    if ( !bPressed )
+                    {
+                        g_wantedUpscaleFilter = ( g_wantedUpscaleFilter == GamescopeUpscaleFilter::SGSR ) ?
+                            GamescopeUpscaleFilter::LINEAR : GamescopeUpscaleFilter::SGSR;
+                    }
+                    return;
+                }
+
                 default:
                     break;
             }
