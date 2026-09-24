@@ -3071,6 +3071,11 @@ namespace gamescope
                 g_bForceRelativeMouse = !g_bForceRelativeMouse;
                 static_cast< CWaylandConnector * >( m_pBackend->GetCurrentConnector() )->SetRelativeMouseMode( g_bForceRelativeMouse );
                 break;
+
+            case KEY_J:
+                g_wantedUpscaleFilter = ( g_wantedUpscaleFilter == GamescopeUpscaleFilter::SGSR ) ?
+                    GamescopeUpscaleFilter::LINEAR : GamescopeUpscaleFilter::SGSR;
+                break;
                 
             default:
                 break;

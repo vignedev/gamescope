@@ -295,6 +295,7 @@ const char usage[] =
 	"  Super + S                      take a screenshot\n"
 	"  Super + G                      toggle keyboard grab\n"
 	"  Super + H                      toggle mouse grab\n"
+	"  Super + J                      toggle SGSR upscaling\n"
 	"";
 
 std::atomic< bool > g_bRun{true};
