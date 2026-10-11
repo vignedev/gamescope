@@ -1723,7 +1723,7 @@ namespace gamescope
 
         // Missing cursor info can mean it has not been routed to this connector yet.
         bool bHideLaserIntersection = bIsConnectorCurrentMouseFocus && m_bCursorImageKnown && !pCursorLayer && !pCursorInfo;
-        if ( IsRelativeMouse() )
+        if ( IsRelativeMouse() && cv_vr_trackpad_relative_mouse_mode )
             bHideLaserIntersection = cv_vr_trackpad_hide_laser;
 
         if ( bHideLaserIntersection != m_bHideLaserIntersection )
