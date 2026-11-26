@@ -2997,6 +2997,7 @@ namespace gamescope
             case KEY_I:
             case KEY_O:
             case KEY_S:
+            case KEY_H:
                 return true;
             default:
                 return false;
